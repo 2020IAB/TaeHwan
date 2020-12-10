@@ -52,7 +52,12 @@ stopwords = ['도', '는', '다', '의', '가', '이', '은', '한', '에', '하
              '로', '할', '어', '보', '면', '기', '곳', '에서', '것', '지만', '서울', '제주', '부산', '제주',
              '제주도', '합니다', '었', '어요', '어서', '적', '았', '갈', '만', '잘', '나', '않', '번', '아요',
              '는데', '했', '네요', '서', '길', '는데', '아', '없', '같', '해', '때', '까지', '시','사람', 
-             '너무', '볼', '방문', '시간', '절', '타', '좋', '많', '러', '들어가', '음', '아서', '아니', '함']
+             '너무', '볼', '방문', '시간', '절', '타', '좋', '많', '러', '들어가', '음', '아서', '아니', '함', '원',
+             '생각', '분', '해서', '라', '겠', '안', '구', '싶', '구요', '거', '그냥', '던', '중', '사', '에게',
+             '걸', '다는', '님', '싶', '곳곳', '년', '정도', '찍', '긴', '라는', '며', '따라', '추천', '힘들'
+             '으면', '줄', '일', '그리고', '부터', '한다', '자', '보다', '에게', '근처', '우리', '정말', '별로',
+             '몇', '데', '은데', '진', '갔', '그', '꼭', '니', '올라가', '아주', '면서', '최', '곱', '맑', '날', '니',
+             ]
 
 for i in area_list:
     area_list[i][0]['tokenized'] = area_list[i][0]['snippet'].apply(mecab.morphs)
@@ -65,6 +70,10 @@ positive_words = {i: np.hstack(area_list[i][0][area_list[i][0].label == 1]['toke
 
 negative_word_count = {i: Counter(negative_words[i]) for i in area_list}
 positive_word_count = {i: Counter(positive_words[i]) for i in area_list}
+
+print(negative_word_count['busan'].most_common(20))
+print(positive_word_count['busan'].most_common(20))
+
 
 # print(positive_word_count['jeju'].most_common(20))
 # print(negative_word_count['jeju'].most_common(20))
@@ -131,27 +140,13 @@ model.compile(optimizer='rmsprop', loss='binary_crossentropy', metrics=['acc'])
 for i in area_list:
     model.fit(X_train[i], y_train[i], epochs=20, callbacks=[es, ModelCheckpoint('best_model_'+i+'.h5', monitor='val_acc', mode='max', verbose=1, save_best_only=True)], batch_size=60, validation_split=0.2)
 
-loaded_model = load_model('best_model_seoul.h5')
+loaded_model = load_model('./best_model_busan.h5')
 print("\n 테스트 정확도: %.4f" % (loaded_model.evaluate(X_test['jeju'], y_test['jeju'])[1]))
 print("\n 테스트 정확도: %.4f" % (loaded_model.evaluate(X_test['busan'], y_test['busan'])[1]))
 print("\n 테스트 정확도: %.4f" % (loaded_model.evaluate(X_test['seoul'], y_test['seoul'])[1]))
 
-def sentiment_predict(new_sentence):
-  new_sentence = mecab.morphs(new_sentence) # 토큰화
-  new_sentence = [word for word in new_sentence if not word in stopwords] # 불용어 제거
-  encoded = tokenizer.texts_to_sequences([new_sentence]) # 정수 인코딩
-  pad_new = pad_sequences(encoded, maxlen = 80) # 패딩
-  score = float(loaded_model.predict(pad_new)) # 예측
-  if(score > 0.5):
-    print("{:.2f}% 확률로 긍정 리뷰입니다.".format(score * 100))
-  else:
-    print("{:.2f}% 확률로 부정 리뷰입니다.".format((1 - score) * 100))
 
-
-'''def shell():
-    x = str(input('~$ '))
-    if x == 'exit':
-        return 0;
-    sentiment_predict(x)
-    shell()
-shell()'''
+for i in area_list:
+    print(f'============={i}==============')
+    print('naga:',negative_word_count[i].most_common(20))
+    print('posi:',positive_word_count[i].most_common(20))
